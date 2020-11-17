@@ -3,8 +3,8 @@ import os
 import torch
 import torch.nn as nn
 import torch.utils.model_zoo as model_zoo
-from .resnext_features import resnext101_32x4d_features
-from .resnext_features import resnext101_64x4d_features
+from resnext_features import resnext101_32x4d_features
+from resnext_features import resnext101_64x4d_features
 
 __all__ = ['ResNeXt101_32x4d', 'resnext101_32x4d',
            'ResNeXt101_64x4d', 'resnext101_64x4d']
@@ -103,3 +103,13 @@ def resnext101_64x4d(num_classes=1000, pretrained='imagenet'):
         model.mean = settings['mean']
         model.std = settings['std']
     return model
+
+import torch.neuron
+if __name__ == '__main__':
+    model = resnext101_64x4d(pretrained=None)
+    model.eval()
+    data_in = torch.rand(2, 3, 224, 224)
+    torch.neuron.analyze_model(model, example_inputs=[data_in])
+    model_neuron = torch.neuron.trace(model, example_inputs=[data_in])
+    model_neuron.save("resnext.pt")
+    print(model(data_in).shape)
